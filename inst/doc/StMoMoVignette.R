@@ -13,8 +13,7 @@ knit_hooks$set(output = function(x, options) {
 })
 
 ## ----installStMoMo, eval = FALSE-----------------------------------------
-#  install.packages("devtools")
-#  devtools::install_github("amvillegas/StMoMo")
+#  install.packages("StMoMo")
 
 ## ----loadStMoMo, eval=TRUE,echo = TRUE, message=FALSE, warning=FALSE-----
 library(StMoMo)
@@ -292,7 +291,7 @@ matlines(RHsim$years, RHsim$rates["65", , 1:20], type = "l", lty = 1)
 #  text(1965, qxt[c("65", "75", "85"), "1990"],
 #       labels = c("x = 65", "x = 75", "x = 85"))
 
-## ----plotLCfan, fig.width=4, fig.height=5,out.width="4.5cm", echo=FALSE, cache=TRUE, dependson="simAll"----
+## ----plotLCfan, fig.width=4, fig.height=5,out.width="4.5cm", echo=FALSE, warning=FALSE, cache=TRUE, dependson="simAll"----
 library(fanplot)
 probs = c(2.5, 10, 25, 50, 75, 90, 97.5)
 qxt <- Dxt/Ext 

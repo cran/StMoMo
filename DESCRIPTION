@@ -1,6 +1,6 @@
 Package: StMoMo
 Title: Stochastic Mortality Modelling
-Version: 0.2.0
+Version: 0.3.0
 Author: Andres Villegas <andresmauriciovillegas@gmail.com>,
     Pietro Millossovich <Pietro.Millossovich.1@city.ac.uk>,
     Vladimir Kaishev <Vladimir.Kaishev.1@city.ac.uk>
@@ -21,6 +21,6 @@ LazyData: true
 Suggests: knitr, xtable
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2015-06-10 00:06:49 UTC; Andres M Villegas
+Packaged: 2015-10-13 07:24:51 UTC; Andres M Villegas
 Repository: CRAN
-Date/Publication: 2015-06-10 14:45:01
+Date/Publication: 2015-10-13 09:37:59
