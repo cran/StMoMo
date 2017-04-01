@@ -66,13 +66,10 @@ When \code{type = "signplot"} a two dimensional black and white map of the
  @seealso \code{\link{residuals.fitStMoMo}}
 }
 \examples{
-CBDfit <- fit(cbd(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-              ages = EWMaleData$ages, years = EWMaleData$years,
-              ages.fit = 55:89)
+CBDfit <- fit(cbd(), data = central2initial(EWMaleData), ages.fit = 55:89)
 CBDres <- residuals(CBDfit)
 plot(CBDres)
 plot(CBDres, type = "signplot")
 plot(CBDres, type = "colourmap")
   
 }
-

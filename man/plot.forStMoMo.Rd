@@ -5,7 +5,7 @@
 \title{Plot a forecast from a Stochastic Mortality Model}
 \usage{
 \method{plot}{forStMoMo}(x, nCol = 2, parametricbx = TRUE, only.kt = FALSE,
- only.gc = FALSE, ...)
+ only.gc = FALSE,  colour = "grey60", ...)
 }
 \arguments{
 \item{x}{an object of class \code{"forStMoMo"} with the forecast 
@@ -22,6 +22,8 @@ plotted.}
 \item{only.gc}{If \code{TRUE} only the cohort index of the model is 
 plotted. This argument is ignored if \code{only.kt} is \code{TRUE}.}
 
+\item{colour}{colour to use in the prediction intervals.}
+
 \item{...}{additional arguments to control graphical appearance.
 See \code{\link[graphics]{plot}}.}
 }
@@ -30,9 +32,7 @@ Plot a forecasted Stochastic Mortality Model of class \code{"forStMoMo"}.
 }
 \examples{
 wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-APCfit <- fit(apc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-              ages = EWMaleData$ages, years = EWMaleData$years, 
-              ages.fit = 55:89, wxt = wxt)
+APCfit <- fit(apc(), data = EWMaleData, ages.fit = 55:89, wxt = wxt)
 APCfor <- forecast(APCfit)
 plot(APCfor)
 plot(APCfor, parametricbx = FALSE, nCol = 3)
@@ -42,4 +42,3 @@ plot(APCfor, only.gc = TRUE, lwd = 2)
 \seealso{
 \code{\link{plot.fitStMoMo}}
 }
-

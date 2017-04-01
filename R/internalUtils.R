@@ -48,7 +48,7 @@ computeLogLikPoisson <- function(obs, fit, weight) {
   res <- array(NA, dim = dim(weight))
   res[ind] <- weight[ind] * (obs[ind] * log(fit[ind]) - 
                           fit[ind] - lfactorial(obs[ind]))
-  sum(res, na.rm=T)
+  sum(res, na.rm=TRUE)
 }
 
 #' Compute Binomial loglikelihod
@@ -78,7 +78,7 @@ computeDeviancePoisson <- function(obs, fit, weight) {
   dev <- array(NA, dim = dim(weight))
   dev[ind] <- 2 * weight[ind] * (obs[ind] * log(obs[ind] / fit[ind])
                                  - (obs[ind] - fit[ind]))
-  sum(dev, na.rm = T)
+  sum(dev, na.rm = TRUE)
 }
 
 #' Binomial deviance
@@ -94,7 +94,7 @@ computeDevianceBinomial <- function(obs, fit, exposure, weight) {
   dev[ind] <- 2 * weight[ind] * exposure[ind] * 
              (obs[ind] * log(obs[ind] / fit[ind]) + 
         (1 - obs[ind]) * log((1 - obs[ind]) / (1 - fit[ind])))
-  sum(dev, na.rm = T)
+  sum(dev, na.rm = TRUE)
 }
 
 #'Logit function
@@ -170,4 +170,28 @@ getMinimalFitStMoMo <- function(object) {
                  kt = object$kt, b0x = object$b0x, gc = object$gc, 
                  oxt = object$oxt, ages = object$ages, years = object$years, 
                  cohorts = object$cohorts), class = "fitStMoMo")  
+}
+
+
+#' Copy of unexported function arima.string from forecast
+#' @keywords internal
+arima.string <- function (object, padding = FALSE) 
+{
+  order <- object$arma[c(1, 6, 2, 3, 7, 4, 5)]
+  result <- paste("ARIMA(", order[1], ",", order[2], ",", order[3], 
+                  ")", sep = "")
+  if (order[7] > 1 & sum(order[4:6]) > 0) 
+    result <- paste(result, "(", order[4], ",", order[5], 
+                    ",", order[6], ")[", order[7], "]", sep = "")
+  if (is.element("constant", names(object$coef)) | is.element("intercept", 
+                                                              names(object$coef))) 
+    result <- paste(result, "with non-zero mean")
+  else if (is.element("drift", names(object$coef))) 
+    result <- paste(result, "with drift        ")
+  else if (order[2] == 0 & order[5] == 0) 
+    result <- paste(result, "with zero mean    ")
+  else result <- paste(result, "                  ")
+  if (!padding) 
+    result <- gsub("[ ]*$", "", result)
+  return(result)
 }

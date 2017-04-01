@@ -32,9 +32,7 @@ constraints \deqn{\sum_c \gamma_c = 0}  and  \deqn{\sum_c c\gamma_c = 0}
 
 APC <- apc()
 wxt <- genWeightMat(EWMaleData$ages,  EWMaleData$years, clip = 3)
-APCfit <- fit(APC, Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-              ages = EWMaleData$ages, years = EWMaleData$years, 
-              wxt = wxt)
+APCfit <- fit(APC, data = EWMaleData, wxt = wxt)
 plot(APCfit, parametricbx = FALSE, nCol = 3)
 
 }
@@ -47,4 +45,3 @@ North American Actuarial Journal, 13(1), 1-35.
 \seealso{
 \code{\link{StMoMo}}, \code{\link{rh}}
 }
-

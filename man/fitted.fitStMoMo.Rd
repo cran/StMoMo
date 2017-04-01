@@ -24,17 +24,14 @@ Returns fitted values for the data used in fitting a Stochastic Mortality
 Model.
 }
 \examples{
-LCfit <- fit(lc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-             ages = EWMaleData$ages, years = EWMaleData$years,
-             ages.fit = 55:89)
+LCfit <- fit(lc(), data = EWMaleData, ages.fit = 55:89)
 matplot(LCfit$ages, fitted(LCfit), type = "l", lty = 1, 
         col = rainbow(length(LCfit$years)), xlab = "year", 
         ylab = "log death rate", main = "Fitted rates")
 
-qxthat <- fitted(LCfit, type = "rates")
-qxt <- LCfit$Dxt / LCfit$Ext
-plot(LCfit$years, qxt["65", ], xlab = "year", ylab = "death rate",
+uxthat <- fitted(LCfit, type = "rates")
+uxt <- LCfit$Dxt / LCfit$Ext
+plot(LCfit$years, uxt["65", ], xlab = "year", ylab = "death rate",
      main = "fitted vs. observed rates at age 65")
-lines(LCfit$years, qxthat["65", ])
+lines(LCfit$years, uxthat["65", ])
 }
-

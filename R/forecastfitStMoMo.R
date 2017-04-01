@@ -2,9 +2,10 @@
 #' 
 #' Forecast mortality rates using a Stochastic Mortality Model fit.
 #' The period indexes \eqn{\kappa_t^{(i)}, i = 1,..N,} are forecasted
-#' using a Multivariate Random Walk with Drift (MRWD). The cohort index 
-#' \eqn{\gamma_{t-x}} is forecasted using an ARIMA\eqn{(p, d, q)}. By default
-#' an ARIMA\eqn{(1, 1, 0)} with a constant is used.
+#' using ether a Multivariate Random Walk with Drift (MRWD) or 
+#' \eqn{N} independent ARIMA\eqn{(p, d, q)} models. The cohort index 
+#' \eqn{\gamma_{t-x}} is forecasted using an ARIMA\eqn{(p, d, q)}. 
+#' By default an ARIMA\eqn{(1, 1, 0)} with a constant is used.
 #' 
 #' @param object an object of class \code{"fitStMoMo"} with the fitted 
 #' parameters of a stochastic mortality model.
@@ -14,26 +15,38 @@
 #' @param oxt optional matrix/vector or scalar of known offset to be 
 #' added in the forecasting. This can be used to specify any a priori 
 #' known component to be added to the forecasted predictor.
-#' @param gc.order a specification of the ARIMA model: the three components 
-#' \eqn{(p, d, q)} are the AR order, the degree of differencing, and the MA 
-#' order. The default is an ARIMA\eqn{(1, 1, 0)}.
+#' @param gc.order a specification of the ARIMA model for the cohort effect: 
+#' the three components \eqn{(p, d, q)} are the AR order, the degree of 
+#' differencing, and the MA. The default is an ARIMA\eqn{(1, 1, 0)}.
 #' @param gc.include.constant a logical value indicating if the ARIMA model
 #' should include a constant value. The default is \code{TRUE}. 
 #' @param jumpchoice option to select the jump-off rates, i.e. the rates 
 #' from the final year of observation, to use in projections of mortality 
 #' rates. \code{"fit"}(default) uses the fitted rates and \code{"actual"} 
 #' uses the actual rates from the final year.
+#' @param kt.method optional forecasting method for the period index. 
+#' The alternatives are \code{"mrwd"}(default) and \code{"iarima"}. See details.
+#' @param kt.order  an optional matrix with one row per period index
+#' specifying the ARIMA models: for the ith row (ith period index) the three 
+#' components \eqn{(p, d, q)} are the AR order, the degree of  differencing, 
+#' and the MA order. If absent the arima models are fitted using 
+#' \code{\link[forecast]{auto.arima}}. This argument is only used when
+#' \code{kt.method} is \code{"iarima"}.
+#' @param kt.include.constant an optional vector of logical values 
+#' indicating if the ARIMA model for the ith period index should include a 
+#' constant value. The default is \code{TRUE}.  This argument is only used 
+#' when \code{kt.method} is \code{"iarima"}. 
 #' @param kt.lookback optional argument to specify the look-back window to use
-#'        in the estimation of the MRWD for period indexes. By default all the 
-#'        estimated values are used in estimating the MRWD. If 
-#'        \code{kt.lookback} is provided then the last \code{kt.lookback} 
-#'        years of \eqn{\kappa_t^{(i)}, i = 1,..N,} are used.
+#' in the estimation of the time serires model for the period indexes. By 
+#' default all the estimated values are used. If 
+#' \code{kt.lookback} is provided then the last \code{kt.lookback} 
+#' years of \eqn{\kappa_t^{(i)}, i = 1,..N,} are used.
 #' @param gc.lookback optional argument to specify the look-back window to use
 #'        in the estimation of the ARIMA model for the cohort effect. By 
 #'        default all the estimated values are used in estimating the ARIMA 
 #'        model. If \code{gc.lookback} is provided then the last 
 #'        \code{gc.lookback} years of \eqn{\gamma_{t-x}} are used.
-#' @param ... other arguments.
+#' @param ... other arguments for \code{\link{iarima}}.
 #'  
 #' @return A list of class \code{"forStMoMo"} with components:
 #' 
@@ -45,15 +58,15 @@
 #' \item{kt.f}{ forecasts of period indexes of the model. This is a list with 
 #' the \code{model} fitted to \eqn{\kappa_t}; the \code{mean}(central) 
 #' forecast, the \code{lower} and \code{upper} limits of the prediction 
-#' interval; the confidence \code{level} associated with the prediction 
-#' interval; and the \code{years} for which a forecast was produced. If the 
+#' intervals; the confidence \code{level} associated with the prediction 
+#' intervals; and the \code{years} for which a forecast was produced. If the 
 #' model does not have any age-period terms (i.e. \eqn{N=0}) this is set to 
 #' \code{NULL}.}
 #'   
 #' \item{gc.f}{ forecasts of cohort index of the model. This is a list with 
 #' the \code{model} fitted to \eqn{\gamma_c}; the \code{mean}(point) forecast,
-#' the \code{lower} and \code{upper} limits of the prediction interval; the
-#' confidence \code{level} associated with the prediction interval; and the 
+#' the \code{lower} and \code{upper} limits of the prediction intervals; the
+#' confidence \code{level} associated with the prediction intervals; and the 
 #' \code{cohorts} for which a forecast was produced. If the mortality model
 #' does not have a cohort effect this is set to \code{NULL}.} 
 #' 
@@ -66,40 +79,60 @@
 #'
 #' \item{jumpchoice}{Jump-off method used in the forecast.}
 #' 
+#' \item{kt.method}{method used in the forecast of the period index.}
+#' 
 #' @details
-#' Fitting and forecasting of the Multivariate Random Walk with Drift
-#' for the period indexes use the function \code{\link{mrwd}}.
+#' If \code{kt.method} is \code{"mrwd"}, fitting and forecasting of 
+#' the time series model for the  period indexes is done with a 
+#' Multivariate Random Walk with Drift using the function 
+#' \code{\link{mrwd}}.
+#' 
+#' If \code{kt.method} is \code{"iarima"}, fitting and forecasting of 
+#' the time series model for the  period indexes is done with \eqn{N} 
+#' indepedent arima models using the function \code{\link{iarima}}. 
+#' See this latter function for details on input arguments 
+#' \code{kt.order} and \code{kt.include.constant}.  
+#' 
 #' Fitting and forecasting of the ARIMA model for the cohort index
 #' is done with function \code{\link[forecast]{Arima}} from package 
 #' \pkg{forecast}. See the latter function for further details on 
 #' input arguments \code{gc.order} and \code{gc.include.constant}. 
 #' 
-#' Note that in some cases forecast of the 
-#' cohort effects may be needed for a horizon longer than \code{h}.
-#' This is the case when in the fitted model the most recent cohorts 
-#' have been zero weighted. The forecasted cohorts can be seen in 
-#' \code{gc.f$cohorts}. 
+#' Note that in some cases forecast of the cohort effects may be
+#' needed for a horizon longer than \code{h}. This is the case when 
+#' in the fitted model the most recent cohorts have been zero weighted. 
+#' The forecasted cohorts can be seen in \code{gc.f$cohorts}. 
 #' 
 #' @examples 
-#' #Lee-Carter
-#' LCfit <- fit(lc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'              ages = EWMaleData$ages, years = EWMaleData$years,
-#'              ages.fit = 55:89)
+#' #Lee-Carter (random walk with drift)
+#' LCfit <- fit(lc(), data = EWMaleData, ages.fit = 55:89)
 #' LCfor <- forecast(LCfit)
 #' plot(LCfor)
 #' 
-#' #CBD
-#' CBDfit <- fit(cbd(),Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'               ages = EWMaleData$ages, years = EWMaleData$years,
-#'               ages.fit = 55:89)
+#' #Lee-Carter (forecast with ARIMA(1,1,2) with drift )
+#' LCfor.iarima1 <- forecast(LCfit, kt.method = "iarima", kt.order = c(1, 1 , 2))
+#' plot(LCfor.iarima1)
+#' 
+#' #Lee-Carter (forecast with auto.arima)
+#' LCfor.iarima2 <- forecast(LCfit, kt.method = "iarima")
+#' plot(LCfor.iarima2)
+#' 
+#' #CBD (Multivariate random walk with drift)
+#' CBDfit <- fit(cbd(), data = central2initial(EWMaleData), ages.fit = 55:89)
 #' CBDfor <- forecast(CBDfit)
 #' plot(CBDfor, parametricbx = FALSE)
 #' 
+#' #CBD (Independent Arima models)
+#' kt.order <- matrix(c(1, 1, 2,  #ARIMA(1, 1, 2) for k[1]
+#'                      0, 1, 1), #ARIMA(0, 1, 1) for k[2]
+#'                    nrow = 2, ncol = 3, byrow = TRUE)
+#' CBDfor.iarima <- forecast(CBDfit, kt.method = "iarima", kt.order = kt.order)
+#' plot(CBDfor.iarima, parametricbx = FALSE)
+#' 
 #' #APC: Compare forecast with different models for the cohort index
 #' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' APCfit <- fit(apc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'               ages = EWMaleData$ages, years = EWMaleData$years, 
-#'               ages.fit = 55:89, wxt = wxt)
+#' APCfit <- fit(apc(), data = EWMaleData,  ages.fit = 55:89, 
+#'               wxt = wxt)
 #' APCfor1 <- forecast(APCfit)
 #' plot(APCfor1, parametricbx = FALSE, nCol = 3)
 #' APCfor2 <- forecast(APCfit, gc.order = c(0, 2, 2))
@@ -135,19 +168,25 @@
 #'        "Fitted jump-off, 30 year look-back"), 
 #'        lty = 1:3, col = c("black", "blue", "red"))
 #' @export
-forecast.fitStMoMo <-function(object, h = 50, level = 95, oxt = NULL,
+forecast.fitStMoMo <-function(object, h = 50, level = c(80, 95), oxt = NULL,
                               gc.order = c(1, 1, 0),
                               gc.include.constant = TRUE,
-                              jumpchoice = c("fit", "actual"), 
+                              jumpchoice = c("fit", "actual"),
+                              kt.method = c("mrwd", "iarima"),
+                              kt.order = NULL,
+                              kt.include.constant = TRUE,
                               kt.lookback = NULL, gc.lookback = NULL,
                               ...) {
   
   jumpchoice <- match.arg(jumpchoice)
-  level <- level[1]
-  if (level > 0 & level < 1) 
-    level <- 100 * level
-  else if (level < 0 | level > 99.99) 
-    stop("Confidence limit out of range")
+  kt.method <- match.arg(kt.method)
+  for (i in 1:length(level)) { 
+    if (level[i] > 0 & level[i] < 1) 
+      level[i] <- 100 * level[i]
+    else if (level[i] < 0 | level[i] > 99.99) 
+      stop("Confidence limit out of range")
+  }
+  level <- sort(level)
   #forecast kt  
   kt <- object$kt
   years <- object$years
@@ -167,7 +206,12 @@ forecast.fitStMoMo <-function(object, h = 50, level = 95, oxt = NULL,
   if (object$model$N > 0) {
     kt.nNA <- max(which(!is.na(kt[1, ])))
     kt.hNA <- nYears - kt.nNA
-    kt.model <- mrwd(kt[, (1 + nYears - kt.lookback):kt.nNA]) 
+    if (kt.method == "mrwd")
+      kt.model <- mrwd(kt[, (1 + nYears - kt.lookback):kt.nNA])
+    else if (kt.method == "iarima") 
+      kt.model <- iarima(kt[, (1 + nYears - kt.lookback):kt.nNA], 
+                         order = kt.order, 
+                         include.constant = kt.include.constant, ...)
     kt.for <- forecast(kt.model, h = h + kt.hNA, level = level)
     if (kt.hNA > 0) {
       years.h <- years[-((kt.nNA+1):nYears)]
@@ -175,9 +219,8 @@ forecast.fitStMoMo <-function(object, h = 50, level = 95, oxt = NULL,
       kt.h <-array(kt.h[, 1:kt.nNA], c(nrow(kt), kt.nNA))
       dimnames(kt.h)[[2]] <- years.h      
     }
-    kt.lower <- kt.upper <- kt.for$mean
-    kt.lower[, ] <- kt.for$lower
-    kt.upper[, ] <- kt.for$upper
+    kt.lower <- kt.for$lower
+    kt.upper <- kt.for$upper
     kt.f <- list(mean = kt.for$mean, lower = kt.lower, upper = kt.upper,
                  level = level, model = kt.model, years = years.f)    
   }  
@@ -208,11 +251,11 @@ forecast.fitStMoMo <-function(object, h = 50, level = 95, oxt = NULL,
       cohorts.f <- c(cohorts[(gc.nNA + 1):nCohorts], cohorts.f)
     }   
     gc.f <- list(mean = as.vector(gc.for$mean), 
-                 lower = as.vector(gc.for$lower), 
-                 upper = as.vector(gc.for$upper), level = level, 
+                 lower = gc.for$lower, 
+                 upper = gc.for$upper, level = level, 
                  model = gc.model, cohorts = cohorts.f)
     
-    names(gc.f$mean) <- names(gc.f$upper) <- names(gc.f$lower) <- cohorts.f
+    names(gc.f$mean) <- dimnames(gc.f$upper)[[1]] <- dimnames(gc.f$lower)[[1]] <- cohorts.f
   }  
   #Offset
   if (is.null(oxt)) oxt <- 0
@@ -236,25 +279,31 @@ forecast.fitStMoMo <-function(object, h = 50, level = 95, oxt = NULL,
   structure(list(rates = forcastRates, ages = agesFor, years = yearsFor, 
                  kt.f = kt.f, gc.f = gc.f, oxt.f = oxt.f, 
                  fitted = fittedRates, model = object,
-                 jumpchoice = jumpchoice, call = match.call()), 
+                 jumpchoice = jumpchoice, kt.method = kt.method,
+                 call = match.call()), 
             class = "forStMoMo")
 }
 
-#' Print an object of class \code{"forStMoMo"}
-#' 
-#' \code{print} method for class \code{"forStMoMo"}. 
-#' @usage 
-#' \method{print}{forStMoMo}(x, ...)
-#' @param x an object of class \code{"forStMoMo"}.
-#' @param ... arguments to be passed to or from other methods.
 #' @export 
-#' @method print forStMoMo
 print.forStMoMo <- function(x,...) {
   cat("Stochastic Mortality Model forecast")
   cat(paste("\nCall:", deparse(x$call)))
   cat("\n\n")
   print(x$model$model)  
-  cat(paste("\n\nJump-off method:", x$jumpchoice))
+  cat(paste("\n\nkt model:", x$kt.method))
+  if (x$kt.method == "iarima") {
+    if (x$model$model$N > 0) {
+      for ( i in 1:x$model$model$N){
+        cat(paste("\n   kt[",i,"]: ", 
+                  arima.string(x$kt.f$model$models[[i]]), sep = ""))
+      }
+    }
+  }
+  if (!is.null(x$gc.f))
+    cat(paste("\ngc model: ", arima.string(x$gc.f$model), sep = ""))
+  cat(paste("\nJump-off method:", x$jumpchoice))
+  cat("\nData: ", x$model$data$label)
+  cat("\nSeries: ", x$model$data$series)
   cat(paste("\nYears in forecast:", min(x$years), "-", max(x$years)))
   cat(paste("\nAges in forecast:", min(x$ages), "-", max(x$ages), "\n"))  
 }

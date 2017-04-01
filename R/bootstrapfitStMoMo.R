@@ -81,8 +81,7 @@ bootstrap =  function(object, nBoot, ...)
 #' @examples 
 #' #Long computing times
 #' \dontrun{
-#' LCfit <- fit(lc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'              ages = EWMaleData$ages, years = EWMaleData$years)
+#' LCfit <- fit(lc(), data = EWMaleData)
 #' 
 #' LCResBoot <- bootstrap(LCfit, nBoot = 500, type = "residual")
 #' plot(LCResBoot)
@@ -150,15 +149,7 @@ bootstrap.fitStMoMo <- function(object, nBoot = 1,
             class = "bootStMoMo")  
 }
 
-#' Print an object of class \code{"bootStMoMo"}
-#' 
-#' \code{print} method for class \code{"bootStMoMo"}. 
-#' @usage 
-#' \method{print}{bootStMoMo}(x, ...)
-#' @param x an object of class \code{"bootStMoMo"}.
-#' @param ... arguments to be passed to or from other methods.
 #' @export 
-#' @method print bootStMoMo
  print.bootStMoMo <- function(x,...) {
   cat("Bootstrapped Stochastic Mortality Model")
   cat(paste("\nCall:", deparse(x$call)))
@@ -170,7 +161,11 @@ bootstrap.fitStMoMo <- function(object, nBoot = 1,
               "deaths and based on\n"))        
   }
   print(x$model$model)  
-  cat(paste("\n\nNumber of bootstrap samples:", length(x$bootParameters), "\n"))  
+  cat(paste("\n\nNumber of bootstrap samples:", length(x$bootParameters)))
+  cat("\nData: ", x$model$data$label)
+  cat("\nSeries: ", x$model$data$series)
+  cat(paste("\nYears in bootstrap:", min(x$model$years), "-", max(x$model$years)))
+  cat(paste("\nAges in bootstrap:", min(x$model$ages), "-", max(x$model$ages), "\n"))
 }
 
 

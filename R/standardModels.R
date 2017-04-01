@@ -34,23 +34,17 @@
 #' 
 #' #sum(kt) = 0 and log link
 #' LC1 <- lc()
-#' LCfit1<-fit(LC1, Dxt = EWMaleData$Dxt,Ext = EWMaleData$Ext, 
-#'             ages = EWMaleData$ages, years = EWMaleData$years,
-#'             ages.fit = 55:89)
+#' LCfit1<-fit(LC1, data = EWMaleData, ages.fit = 55:89)
 #' plot(LCfit1)
 #' 
 #' #kt[1] = 0 and log link
 #' LC2 <- lc(const = "first")
-#' LCfit2<-fit(LC2, Dxt = EWMaleData$Dxt,Ext = EWMaleData$Ext, 
-#'             ages = EWMaleData$ages, years = EWMaleData$years,
-#'             ages.fit = 55:89)
+#' LCfit2<-fit(LC2, data = EWMaleData, ages.fit = 55:89)
 #' plot(LCfit2)
 #' 
 #' #kt[n] = 0 and logit link
 #' LC3 <- lc("logit", "last")
-#' LCfit3<-fit(LC3, Dxt = EWMaleData$Dxt,Ext = EWMaleData$Ext, 
-#'             ages = EWMaleData$ages, years = EWMaleData$years,
-#'             ages.fit = 55:89)
+#' LCfit3<-fit(LC3, data = EWMaleData, ages.fit = 55:89)
 #' plot(LCfit3)
 #' 
 #' @export
@@ -88,8 +82,8 @@ lc <- function(link = c("log", "logit"), const = c("sum", "last", "first")) {
 #'   Note that the default is the logit link.
 #' @return An object of class \code{"StMoMo"}.
 #' 
-#' @seealso \code{\link{StMoMo}}, \code{\link{m6}}, \code{\link{m7}}, 
-#' \code{\link{m8}}
+#' @seealso \code{\link{StMoMo}}, \code{\link{central2initial}}, 
+#' \code{\link{m6}}, \code{\link{m7}}, \code{\link{m8}}
 #'  
 #' @references
 #' Cairns, A. J. G., Blake, D., & Dowd, K. (2006). A Two-Factor Model for 
@@ -99,11 +93,7 @@ lc <- function(link = c("log", "logit"), const = c("sum", "last", "first")) {
 #' @examples
 #' 
 #' CBD <- cbd()
-#' Dxt <- EWMaleData$Dxt
-#' Ext <- EWMaleData$Ext + 0.5 * EWMaleData$Dxt
-#' CBDfit <- fit(CBD, Dxt = Dxt, Ext = Ext, 
-#'             ages = EWMaleData$ages, years = EWMaleData$years,
-#'             ages.fit = 55:89)
+#' CBDfit <- fit(CBD, data = central2initial(EWMaleData), ages.fit = 55:89)
 #' plot(CBDfit, parametricbx = FALSE)
 #' 
 #' @export
@@ -143,16 +133,14 @@ cbd <- function(link = c("logit", "log")) {
 #' 
 #' APC <- apc()
 #' wxt <- genWeightMat(EWMaleData$ages,  EWMaleData$years, clip = 3)
-#' APCfit <- fit(APC, Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'               ages = EWMaleData$ages, years = EWMaleData$years, 
-#'               wxt = wxt)
+#' APCfit <- fit(APC, data = EWMaleData, wxt = wxt)
 #' plot(APCfit, parametricbx = FALSE, nCol = 3)
 #' 
 #' @export
 apc <- function(link = c("log", "logit")) {
   link <- match.arg(link)
   constAPC <- function(ax, bx, kt, b0x, gc, wxt, ages) {    
-    nYears <- dim(wxt)[2]  
+    nYears <- dim(kt)[2]  
     x <- ages  
     t <- 1:nYears
     c <- (1 - tail(ages, 1)):(nYears - ages[1])    
@@ -171,98 +159,6 @@ apc <- function(link = c("log", "logit")) {
   StMoMo(link = link, staticAgeFun = TRUE, periodAgeFun = "1",
                 cohortAgeFun = "1", constFun = constAPC)
 
-}
-
-
-
-#' Create a Renshaw and Haberman (Lee-Carter with cohorts) mortality model
-#' 
-#' Utility function to initialise a \code{StMoMo} object representing a 
-#' Renshaw and Haberman (Lee-Carter with cohorts) mortality model introduced
-#' in Renshaw and Haberman (2006).
-#' 
-#' The created model is either a log-Poisson or a 
-#' logit-Binomial version of the Renshaw and Haberman model which has 
-#' predictor structure   
-#' \deqn{\eta_{xt} = \alpha_x + \beta^{(1)}_x\kappa_t + \beta^{(0)} \gamma_{t-x}.}
-#' or
-#' \deqn{\eta_{xt} = \alpha_x + \beta^{(1)}_x\kappa_t + \gamma_{t-x}.}
-#' depending on the value of argument \code{cohortAgeFun}.
-#'   
-#' To ensure identifiability the  following constraints are imposed
-#' \deqn{\sum_t\kappa_t = 0, \sum_x\beta^{(1)}_x = 1, \sum_c\gamma_c = 0}
-#' plus
-#' \deqn{\sum_x\beta^{(0)}_x = 1}
-#' if \code{cohortAgeFun = "NP"}
-#' 
-#' By default \eqn{\beta^{(0)}_x = 1} as this model has shown to be more
-#' stable (see Haberman and Renshaw (2011) and Hunt and Villegas (2015)).
-#' 
-#' @inheritParams StMoMo
-#' @param cohortAgeFun defines the cohort age modulating parameter 
-#'   \eqn{\beta_x^{(0)}}. It can take values: \code{"NP"} for a non-parametric age
-#'   term or \code{"1"} for \eqn{\beta_x^{(0)}=1} (the default). 
-#' 
-#' @return An object of class \code{"StMoMo"}.
-#' 
-#' @seealso \code{\link{StMoMo}}, \link{lc}, \link{apc}
-#'  
-#' @references
-#'
-#' Haberman, S., & Renshaw, A. (2011). A comparative study of parametric 
-#' mortality projection models. Insurance: Mathematics and Economics, 
-#' 48(1), 35-55. 
-#' 
-#' Hunt, A., & Villegas, A. M. (2015). Robustness and convergence in the 
-#' Lee-Carter model with cohorts. Insurance: Mathematics and Economics, 
-#' 64, 186-202. 
-#' 
-#' Renshaw, A. E., & Haberman, S. (2006). A cohort-based extension to the 
-#' Lee-Carter model for mortality reduction factors. 
-#' Insurance: Mathematics and Economics, 38(3), 556-570.
-#' 
-#' @examples
-#' 
-#' LCfit <-  fit(lc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'                ages = EWMaleData$ages, years = EWMaleData$years, 
-#'                ages.fit = 55:89)
-#' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' RHfit <- fit(rh(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'               ages = EWMaleData$ages, years = EWMaleData$years, 
-#'               ages.fit = 55:89, wxt = wxt, start.ax = LCfit$ax, 
-#'               start.bx = LCfit$bx, start.kt = LCfit$kt)
-#' plot(RHfit)
-#' 
-#' @export
-rh <- function(link = c("log", "logit"), cohortAgeFun = c("1", "NP")) {
-  link <- match.arg(link)
-  cohortAgeFun <- match.arg(cohortAgeFun)
-  constRHgeneral <- function(ax, bx, kt, b0x, gc, wxt, ages, cohortAgeFun) {
-    #\sum k[t] = 0
-    c1 <- mean(kt[1, ], na.rm = TRUE) 
-    ax <- ax + c1 * bx[, 1]
-    kt[1, ] <- kt[1, ] - c1
-    #\sum b[x, 1] = 0
-    c2 <- sum(bx[, 1], na.rm = TRUE)
-    bx[, 1] <- bx[, 1] / c2
-    kt[1, ] <- kt[1, ] * c2
-    #\sum g[c] = 0
-    c3 <- mean(gc, na.rm = TRUE)
-    ax <- ax + c3 * b0x
-    gc <- gc - c3
-    #\sum b0[x] = 1
-    if (cohortAgeFun == "NP") {
-      c4 <- sum(b0x, na.rm = TRUE)
-      b0x <- b0x / c4
-      gc <- gc * c4
-    }
-    list(ax = ax, bx = bx, kt = kt, b0x = b0x, gc = gc)
-  }
-  constRH <- function(ax, bx, kt, b0x, gc, wxt, ages) {
-    constRHgeneral(ax, bx, kt, b0x, gc, wxt, ages, cohortAgeFun) 
-  }
-  StMoMo(link = link, staticAgeFun = TRUE, periodAgeFun = "NP",
-         cohortAgeFun = cohortAgeFun, constFun = constRH)  
 }
 
 
@@ -287,8 +183,8 @@ rh <- function(link = c("log", "logit"), cohortAgeFun = c("1", "NP")) {
 #' @inheritParams cbd
 #' @return An object of class \code{"StMoMo"}.
 #' 
-#' @seealso \code{\link{StMoMo}}, \code{\link{cbd}}, \code{\link{m7}}, 
-#' \code{\link{m8}}
+#' @seealso \code{\link{StMoMo}}, \code{\link{central2initial}}, 
+#' \code{\link{cbd}}, \code{\link{m7}}, \code{\link{m8}}
 #' 
 #' @references
 #' 
@@ -304,11 +200,8 @@ rh <- function(link = c("log", "logit"), cohortAgeFun = c("1", "NP")) {
 #' @examples
 #' 
 #' M6 <- m6()
-#' Dxt <- EWMaleData$Dxt
-#' Ext <- EWMaleData$Ext + 0.5 * EWMaleData$Dxt
 #' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' M6fit <- fit(M6, Dxt = Dxt, Ext = Ext, ages = EWMaleData$ages, 
-#'            years = EWMaleData$years, ages.fit = 55:89)
+#' M6fit <- fit(M6, data = central2initial(EWMaleData), ages.fit = 55:89)
 #' plot(M6fit, parametricbx = FALSE)
 #' 
 #' @export
@@ -317,7 +210,7 @@ m6 <- function(link = c("logit", "log")) {
   f1 <- function(x,ages) x - mean(ages)
   constM6 <- function(ax, bx, kt, b0x, gc, wxt, ages) {
     #See Appendix A in Haberman and Renshaw (2011)
-    nYears <- dim(wxt)[2]
+    nYears <- dim(kt)[2]
     x <- ages
     t <- 1:nYears
     c <- (1 - tail(ages, 1)):(nYears - ages[1])
@@ -360,8 +253,8 @@ m6 <- function(link = c("logit", "log")) {
 #' @inheritParams cbd
 #' @return An object of class \code{"StMoMo"}.
 #' 
-#' @seealso \code{\link{StMoMo}}, \code{\link{cbd}}, \code{\link{m6}}, 
-#' \code{\link{m8}}
+#' @seealso \code{\link{StMoMo}}, \code{\link{central2initial}}, 
+#' \code{\link{cbd}}, \code{\link{m6}}, \code{\link{m8}}
 #' 
 #' @references
 #' 
@@ -377,11 +270,8 @@ m6 <- function(link = c("logit", "log")) {
 #' @examples
 #' 
 #' M7 <- m7()
-#' Dxt <- EWMaleData$Dxt
-#' Ext <- EWMaleData$Ext + 0.5 * EWMaleData$Dxt
 #' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' M7fit <- fit(M7, Dxt = Dxt, Ext = Ext, ages = EWMaleData$ages, 
-#'              years = EWMaleData$years, ages.fit = 55:89)
+#' M7fit <- fit(M7, data = central2initial(EWMaleData), ages.fit = 55:89)
 #' plot(M7fit, parametricbx = FALSE)
 #' 
 #' @export
@@ -395,7 +285,7 @@ m7 <- function(link = c("logit", "log")) {
   }
   constM7 <- function(ax, bx, kt, b0x, gc, wxt, ages) {
     #See Appendix A in Haberman and Renshaw (2011)
-    nYears <- dim(wxt)[2]
+    nYears <- dim(kt)[2]
     x <- ages
     t <- 1:nYears
     c <- (1 - tail(ages, 1)):(nYears - ages[1])
@@ -437,8 +327,8 @@ m7 <- function(link = c("logit", "log")) {
 #' 
 #' @return An object of class \code{"StMoMo"}.
 #' 
-#' @seealso \code{\link{StMoMo}}, \code{\link{cbd}}, \code{\link{m6}}, 
-#' \code{\link{m7}}
+#' @seealso \code{\link{StMoMo}}, \code{\link{central2initial}}, 
+#' \code{\link{cbd}}, \code{\link{m6}}, \code{\link{m7}}
 #' 
 #' @references
 #' 
@@ -450,11 +340,8 @@ m7 <- function(link = c("logit", "log")) {
 #' @examples
 #' 
 #' M8 <- m8(xc = 89)
-#' Dxt <- EWMaleData$Dxt
-#' Ext <- EWMaleData$Ext + 0.5 * EWMaleData$Dxt
 #' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' M8fit <- fit(M8, Dxt = Dxt, Ext = Ext, ages = EWMaleData$ages, 
-#'              years = EWMaleData$years, ages.fit = 55:89)
+#' M8fit <- fit(M8, data = central2initial(EWMaleData), ages.fit = 55:89)
 #' plot(M8fit, parametricbx = FALSE)
 #' 
 #' @export

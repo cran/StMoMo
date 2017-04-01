@@ -57,8 +57,7 @@ Renshaw and Haberman (2008).
 \examples{
 #Long computing times
 \dontrun{
-LCfit <- fit(lc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-             ages = EWMaleData$ages, years = EWMaleData$years)
+LCfit <- fit(lc(), data = EWMaleData)
 
 LCResBoot <- bootstrap(LCfit, nBoot = 500, type = "residual")
 plot(LCResBoot)
@@ -87,4 +86,3 @@ modelling. Insurance: Mathematics and Economics, 42(2), 797-816.
 \seealso{
 \code{\link{simulate.bootStMoMo}}, \code{\link{plot.bootStMoMo}}
 }
-

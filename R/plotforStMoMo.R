@@ -6,7 +6,7 @@
 #' 
 #' @usage 
 #' \method{plot}{forStMoMo}(x, nCol = 2, parametricbx = TRUE, only.kt = FALSE,
-#'  only.gc = FALSE, ...)
+#'  only.gc = FALSE,  colour = "grey60", ...)
 #' 
 #' @param x an object of class \code{"forStMoMo"} with the forecast 
 #'  of a stochastic mortality model.
@@ -15,14 +15,13 @@
 #' plotted.
 #' @param only.gc If \code{TRUE} only the cohort index of the model is 
 #' plotted. This argument is ignored if \code{only.kt} is \code{TRUE}.
+#' @param colour colour to use in the prediction intervals.
 #'
 #' @seealso \code{\link{plot.fitStMoMo}}
 #'
 #' @examples
 #' wxt <- genWeightMat(55:89,  EWMaleData$years, clip = 3)
-#' APCfit <- fit(apc(), Dxt = EWMaleData$Dxt, Ext = EWMaleData$Ext, 
-#'               ages = EWMaleData$ages, years = EWMaleData$years, 
-#'               ages.fit = 55:89, wxt = wxt)
+#' APCfit <- fit(apc(), data = EWMaleData, ages.fit = 55:89, wxt = wxt)
 #' APCfor <- forecast(APCfit)
 #' plot(APCfor)
 #' plot(APCfor, parametricbx = FALSE, nCol = 3)
@@ -31,7 +30,8 @@
 #' @export 
 #' @method plot forStMoMo
 plot.forStMoMo <- function(x, nCol = 2, parametricbx = TRUE, 
-                           only.kt = FALSE, only.gc = FALSE, ...) {
+                           only.kt = FALSE, only.gc = FALSE, 
+                           colour = "grey60" , ...) {
   
   x.h <- x$model
   years.h <- x.h$years
@@ -91,7 +91,7 @@ plot.forStMoMo <- function(x, nCol = 2, parametricbx = TRUE,
     for (i in 1:N) {      
       #bx
       if (!only.kt && !only.gc) {
-        if (parametricbx == TRUE || is.nonparametric(x$model$periodAgeFun[[i]])) {
+        if (parametricbx == TRUE || is.nonparametric(x.h$model$periodAgeFun[[i]])) {
           plot(x = ages, y = bx[, i], ylab = "", xlab = "age", 
                main = substitute(paste(beta[x]^{(i)}, " vs. x", ""), 
                                  list(i = i)), type = "l", ...)
@@ -100,16 +100,21 @@ plot.forStMoMo <- function(x, nCol = 2, parametricbx = TRUE,
       }
       #kt
       if (!only.gc) {
-        kt.ylim <- range(kt.h[i, ], kt.f$mean[i, ], kt.f$upper[i, ], 
-                         kt.f$lower[i, ], na.rm=TRUE)
-        kt.xlim <- c(years.h[1],tail(years.f,1))
+        kt.ylim <- range(kt.h[i, ], kt.f$mean[i, ], kt.f$upper[i, , ], 
+                         kt.f$lower[i, , ], na.rm=TRUE)
+        kt.xlim <- c(years.h[1], tail(years.f, 1))
         plot(x = years.h,y = kt.h[i, ], ylab="", xlab = "year", 
              main = substitute(paste(kappa[t]^{(i)}, " vs. t", ""), 
                                list(i = i)), type = "l",
              xlim = kt.xlim, ylim = kt.ylim, ...)  
-        lines(years.f, kt.f$mean[i, ], lty = 4, ...)
-        lines(years.f, kt.f$upper[i, ], lty = 3, ...)
-        lines(years.f, kt.f$lower[i, ], lty = 3, ...)
+        fan.col <- colorRampPalette(c(colour, rgb(1, 1, 1)))
+        n.fan <- length(kt.f$level) 
+        fanplot::fan(t(cbind(kt.f$lower[i, , n.fan:1], kt.f$upper[i,,])), data.type = "values", 
+                     start = years.f[1], anchor = kt.h[i, as.character(years.f[1] - 1)],
+                     probs = c(kt.f$level[n.fan:1] / 200, 1 - kt.f$level / 200), 
+                     fan.col = fan.col, n.fan = n.fan + 1, ln = NULL)      
+        lines(c(years.f[1] - 1, years.f), 
+              c(kt.h[i, as.character(years.f[1] - 1)] , kt.f$mean[i, ]), ...)
       }
     }
   }
@@ -131,9 +136,14 @@ plot.forStMoMo <- function(x, nCol = 2, parametricbx = TRUE,
       plot(x = cohorts.h, y = gc.h, ylab = "", xlab = "cohort", 
            main = expression(paste(gamma[t-x], " vs. t-x","")), type = "l", 
            xlim = gc.xlim, ylim = gc.ylim, ...)  
-      lines(cohorts.f, gc.f$mean, lty = 4, ...)
-      lines(cohorts.f, gc.f$upper, lty = 3, ...)
-      lines(cohorts.f, gc.f$lower, lty = 3, ...)
+      fan.col <- colorRampPalette(c(colour, rgb(1, 1, 1)))
+      n.fan <- length(gc.f$level) 
+      fanplot::fan(t(cbind(gc.f$lower[, n.fan:1], gc.f$upper)), data.type = "values", 
+                   start = cohorts.f[1], anchor = gc.h[as.character(cohorts.f[1] - 1)],
+                   probs = c(gc.f$level[n.fan:1] / 200, 1 - gc.f$level / 200), 
+                   fan.col = fan.col, n.fan = n.fan + 1, ln = NULL)     
+      lines(c(cohorts.f[1] - 1, cohorts.f), 
+            c(gc.h[as.character(cohorts.f[1] - 1)], gc.f$mean), ...)
     }
   }
   par(oldpar)
