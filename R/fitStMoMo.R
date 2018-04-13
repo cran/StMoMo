@@ -271,13 +271,13 @@ fit.StMoMo <- function(object, data = NULL, Dxt = NULL, Ext = NULL,
   } else {
     wxt <- as.matrix(wxt)
     if ( nrow(wxt) != nAges ||  ncol(wxt) != nYears) {
-      stop( "Mismatch between the dimension of the weigth matrix wxt and the 
+      stop( "Mismatch between the dimension of the Weight matrix wxt and the 
             number of fitting years or ages")
     }    
   } 
   rownames(wxt) <- ages
   colnames(wxt) <- years
-  if (any(Ext <= 0)) { #Non-positive exposures
+  if (any(Ext <= 0, na.rm = TRUE)) { #Non-positive exposures
     indExt <- (Ext <= 0)
     wxt[indExt] <- 0
     warning(paste("StMoMo: ", sum(indExt), " data points have 
@@ -483,7 +483,7 @@ fit.StMoMo <- function(object, data = NULL, Dxt = NULL, Ext = NULL,
 #' @param zeroWeigthCohorts character vector of cohort whose parameters 
 #' cannot be estimated because all data is zero weighted
 #' 
-#' @details Weigth vectors wx, wx, wc are used to identify parameters that
+#' @details Weight vectors wx, wx, wc are used to identify parameters that
 #' cannot be estimated because all the data is weighted out.
 #' 
 #' @return A list with the model parameters, ax, bx, kt, b0x, gc
@@ -649,7 +649,7 @@ extractCoefficientsFromGnm <- function(object,coefGnmModel, ages, years,
 #' @param years years in the fitting data.
 #' @param cohorts cohorts in the fitting data.
 #' 
-#' @return a vector of intitial parameter estimates
+#' @return a vector of initial parameter estimates
 #' 
 #' @keywords internal
 processStartValues <- function(object, coefNames, ax, bx, kt, b0x, gc, 

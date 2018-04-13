@@ -1,3 +1,9 @@
+StMoMo v0.4.1
+----------------------------------------------------------------
+* Add Citation file for new JSS publication
+* Correct minor bugs
+
+
 StMoMo v0.4.0 
 ----------------------------------------------------------------
 * Upgrade plotting function of forecast models (plot.forStMoMo)
